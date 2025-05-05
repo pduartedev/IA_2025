@@ -1,22 +1,17 @@
 '''
 Implementação do algoritmo Minimax para o jogo Tapatan.
+Versão otimizada para criar uma IA praticamente imbatível.
 '''
 
 class MinimaxAlgoritmo:
     """
-    Implementação do algoritmo Minimax com poda alfa-beta.
+    Implementação do algoritmo Minimax com poda alfa-beta e otimizações para IA imbatível.
     """
     
     @staticmethod
     def jogador(estado):
         """
         Retorna qual jogador ('X' ou 'O') deve jogar no estado atual.
-        
-        Args:
-            estado (Estado): O estado atual do jogo
-            
-        Returns:
-            str: 'X' ou 'O' representando o jogador atual
         """
         return estado.jogador_atual
     
@@ -24,12 +19,6 @@ class MinimaxAlgoritmo:
     def acoes(estado):
         """
         Retorna todas as jogadas disponíveis no estado atual.
-        
-        Args:
-            estado (Estado): O estado atual do jogo
-            
-        Returns:
-            list: Lista de tuplas (origem, destino) representando os movimentos disponíveis
         """
         jogadas = []
         simbolo = MinimaxAlgoritmo.jogador(estado)
@@ -56,13 +45,6 @@ class MinimaxAlgoritmo:
     def resultado(estado, acao):
         """
         Retorna o novo estado após aplicar uma ação ao estado atual.
-        
-        Args:
-            estado (Estado): O estado atual do jogo
-            acao (tuple): Tupla (origem, destino) representando o movimento
-            
-        Returns:
-            Estado: Novo estado após aplicar a ação
         """
         from estado import Estado
         
@@ -85,12 +67,6 @@ class MinimaxAlgoritmo:
     def ganhador(estado):
         """
         Retorna o símbolo do jogador que ganhou, se houver.
-        
-        Args:
-            estado (Estado): O estado atual do jogo
-            
-        Returns:
-            str ou None: 'X', 'O' ou None se não houver ganhador
         """
         # Verificar linhas
         for i in range(3):
@@ -115,12 +91,6 @@ class MinimaxAlgoritmo:
     def final(estado):
         """
         Retorna True se o jogo acabou, False caso contrário.
-        
-        Args:
-            estado (Estado): O estado atual do jogo
-            
-        Returns:
-            bool: True se o jogo acabou, False caso contrário
         """
         # O jogo acaba se houver um ganhador
         if MinimaxAlgoritmo.ganhador(estado) is not None:
@@ -130,15 +100,128 @@ class MinimaxAlgoritmo:
         return len(MinimaxAlgoritmo.acoes(estado)) == 0
     
     @staticmethod
-    def custo(estado):
+    def avaliar_posicao(estado, simbolo_computador):
         """
-        Retorna 1 se X ganhou, -1 se O ganhou, 0 caso contrário.
+        Função avançada de avaliação para favorecer o computador.
+        Retorna um valor heurístico para estados não terminais.
         
         Args:
-            estado (Estado): O estado atual do jogo
+            estado: O estado atual do jogo
+            simbolo_computador: O símbolo do computador ('X' ou 'O')
             
         Returns:
-            int: 1 se X ganhou, -1 se O ganhou, 0 caso contrário
+            float: Valor heurístico da posição atual
+        """
+        # Verificar se há um vencedor
+        vencedor = MinimaxAlgoritmo.ganhador(estado)
+        if vencedor == simbolo_computador:
+            return 100  # Computador venceu
+        elif vencedor is not None:
+            return -100  # Jogador humano venceu
+        
+        simbolo_humano = 'O' if simbolo_computador == 'X' else 'X'
+        valor = 0
+        
+        # Favorecimento do centro - posição estratégica
+        if estado.tabuleiro[1][1] == simbolo_computador:
+            valor += 3
+        elif estado.tabuleiro[1][1] == simbolo_humano:
+            valor -= 3
+        
+        # Avaliar possibilidades de 2-em-linha
+        # Para o computador
+        valor += MinimaxAlgoritmo._contar_dois_em_linha(estado, simbolo_computador) * 5
+        # Para o humano
+        valor -= MinimaxAlgoritmo._contar_dois_em_linha(estado, simbolo_humano) * 5
+        
+        # Avaliar mobilidade (número de movimentos possíveis)
+        # Original do jogador atual
+        jogador_atual = estado.jogador_atual
+        
+        # Temporariamente mudar para computador e calcular mobilidade
+        estado.jogador_atual = simbolo_computador
+        movimentos_computador = len(MinimaxAlgoritmo.acoes(estado))
+        valor += movimentos_computador * 0.5
+        
+        # Temporariamente mudar para humano e calcular mobilidade
+        estado.jogador_atual = simbolo_humano
+        movimentos_humano = len(MinimaxAlgoritmo.acoes(estado))
+        valor -= movimentos_humano * 0.5
+        
+        # Restaurar jogador original
+        estado.jogador_atual = jogador_atual
+        
+        # Favorecimento de posições próximas de peças próprias
+        valor += MinimaxAlgoritmo._avaliar_proximidade(estado, simbolo_computador)
+        
+        return valor
+    
+    @staticmethod
+    def _contar_dois_em_linha(estado, simbolo):
+        """
+        Conta quantas configurações de 2-em-linha o jogador tem.
+        Isso indica posições quase vencedoras.
+        """
+        contador = 0
+        
+        # Verificar linhas
+        for i in range(3):
+            if (estado.tabuleiro[i][0] == estado.tabuleiro[i][1] == simbolo and estado.tabuleiro[i][2] == ' ') or \
+               (estado.tabuleiro[i][0] == estado.tabuleiro[i][2] == simbolo and estado.tabuleiro[i][1] == ' ') or \
+               (estado.tabuleiro[i][1] == estado.tabuleiro[i][2] == simbolo and estado.tabuleiro[i][0] == ' '):
+                contador += 1
+        
+        # Verificar colunas
+        for j in range(3):
+            if (estado.tabuleiro[0][j] == estado.tabuleiro[1][j] == simbolo and estado.tabuleiro[2][j] == ' ') or \
+               (estado.tabuleiro[0][j] == estado.tabuleiro[2][j] == simbolo and estado.tabuleiro[1][j] == ' ') or \
+               (estado.tabuleiro[1][j] == estado.tabuleiro[2][j] == simbolo and estado.tabuleiro[0][j] == ' '):
+                contador += 1
+        
+        # Verificar diagonais
+        if (estado.tabuleiro[0][0] == estado.tabuleiro[1][1] == simbolo and estado.tabuleiro[2][2] == ' ') or \
+           (estado.tabuleiro[0][0] == estado.tabuleiro[2][2] == simbolo and estado.tabuleiro[1][1] == ' ') or \
+           (estado.tabuleiro[1][1] == estado.tabuleiro[2][2] == simbolo and estado.tabuleiro[0][0] == ' '):
+            contador += 1
+        
+        if (estado.tabuleiro[0][2] == estado.tabuleiro[1][1] == simbolo and estado.tabuleiro[2][0] == ' ') or \
+           (estado.tabuleiro[0][2] == estado.tabuleiro[2][0] == simbolo and estado.tabuleiro[1][1] == ' ') or \
+           (estado.tabuleiro[1][1] == estado.tabuleiro[2][0] == simbolo and estado.tabuleiro[0][2] == ' '):
+            contador += 1
+        
+        return contador
+    
+    @staticmethod
+    def _avaliar_proximidade(estado, simbolo):
+        """
+        Avalia quão próximas estão as peças do jogador entre si.
+        Proximidade entre peças pode levar a melhores chances de formar linha.
+        """
+        valor = 0
+        pecas = []
+        
+        # Encontrar todas as peças do jogador
+        for i in range(3):
+            for j in range(3):
+                if estado.tabuleiro[i][j] == simbolo:
+                    pecas.append((i, j))
+        
+        # Calcular proximidade entre peças (menor distância = melhor)
+        for i, peca1 in enumerate(pecas):
+            for peca2 in pecas[i+1:]:
+                distancia = abs(peca1[0] - peca2[0]) + abs(peca1[1] - peca2[1])
+                if distancia <= 1:  # Peças adjacentes
+                    valor += 2
+                elif distancia == 2:  # Peças a uma casa de distância
+                    valor += 1
+        
+        return valor
+    
+    @staticmethod
+    def custo(estado, simbolo_computador='O'):
+        """
+        Retorna 1 se X ganhou, -1 se O ganhou, 0 caso contrário.
+        Modificado para incluir avaliação heurística para estados não terminais.
         """
         vencedor = MinimaxAlgoritmo.ganhador(estado)
         
@@ -146,27 +229,21 @@ class MinimaxAlgoritmo:
             return 1
         elif vencedor == 'O':
             return -1
-        else:
+        elif MinimaxAlgoritmo.final(estado):
             return 0
+        else:
+            # Para estados não terminais, usar a função de avaliação
+            return MinimaxAlgoritmo.avaliar_posicao(estado, simbolo_computador) / 100
     
     @staticmethod
-    def minimax(estado, profundidade=3, alfa=float('-inf'), beta=float('inf'), maximizando=True):
+    def minimax(estado, profundidade=5, alfa=float('-inf'), beta=float('inf'), maximizando=True, simbolo_computador='O'):
         """
         Implementa o algoritmo minimax com poda alfa-beta para determinar o melhor movimento.
-        
-        Args:
-            estado (Estado): O estado atual do jogo
-            profundidade (int): A profundidade máxima da busca
-            alfa (float): O valor alfa para poda alfa-beta
-            beta (float): O valor beta para poda alfa-beta
-            maximizando (bool): True se estamos maximizando, False se estamos minimizando
-            
-        Returns:
-            tuple: (melhor_valor, melhor_acao) - o melhor valor e a melhor ação encontrados
+        Profundidade maior (5) e avaliação de posição melhorada.
         """
         # Caso base: jogo acabou ou atingiu profundidade máxima
         if profundidade == 0 or MinimaxAlgoritmo.final(estado):
-            return MinimaxAlgoritmo.custo(estado), None
+            return MinimaxAlgoritmo.custo(estado, simbolo_computador), None
         
         # Inicializar melhor ação e valor
         melhor_acao = None
@@ -177,7 +254,7 @@ class MinimaxAlgoritmo:
             for acao in MinimaxAlgoritmo.acoes(estado):
                 # Calcular o valor minimax do resultado dessa ação
                 novo_estado = MinimaxAlgoritmo.resultado(estado, acao)
-                valor, _ = MinimaxAlgoritmo.minimax(novo_estado, profundidade - 1, alfa, beta, False)
+                valor, _ = MinimaxAlgoritmo.minimax(novo_estado, profundidade - 1, alfa, beta, False, simbolo_computador)
                 
                 # Atualizar melhor valor e ação, se necessário
                 if valor > melhor_valor:
@@ -198,7 +275,7 @@ class MinimaxAlgoritmo:
             for acao in MinimaxAlgoritmo.acoes(estado):
                 # Calcular o valor minimax do resultado dessa ação
                 novo_estado = MinimaxAlgoritmo.resultado(estado, acao)
-                valor, _ = MinimaxAlgoritmo.minimax(novo_estado, profundidade - 1, alfa, beta, True)
+                valor, _ = MinimaxAlgoritmo.minimax(novo_estado, profundidade - 1, alfa, beta, True, simbolo_computador)
                 
                 # Atualizar melhor valor e ação, se necessário
                 if valor < melhor_valor:

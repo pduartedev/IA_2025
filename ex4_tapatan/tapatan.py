@@ -25,8 +25,8 @@ class Tapatan:
         # Contador para acompanhar o número de turnos
         self.turnos = 0
         
-        # Instância do algoritmo Minimax
-        self.minimax_algoritmo = MinimaxAlgoritmo()
+        # Profundidade fixa para o minimax (IA imbatível)
+        self.dificuldade = 5
     
     def limpar_tela(self):
         """Limpa a tela do console"""
@@ -139,8 +139,15 @@ class Tapatan:
         # Ajustar o maximizando com base no símbolo do computador
         maximizando = self.simbolo_computador == 'X'
         
-        # Chamar o algoritmo minimax
-        _, melhor_acao = MinimaxAlgoritmo.minimax(self.estado, profundidade=3, maximizando=maximizando)
+        print("\nAnalisando possíveis movimentos...")
+        
+        # Chamar o algoritmo minimax com profundidade fixa e avaliação melhorada
+        _, melhor_acao = MinimaxAlgoritmo.minimax(
+            self.estado, 
+            profundidade=self.dificuldade, 
+            maximizando=maximizando, 
+            simbolo_computador=self.simbolo_computador
+        )
         
         return melhor_acao
     
@@ -241,18 +248,18 @@ class Tapatan:
         """Configura o modo de jogo (contra computador ou contra outro jogador)"""
         self.limpar_tela()
         print("\n== MODO DE JOGO ==\n")
-        print("1. Jogador vs Jogador")
-        print("2. Jogador vs Computador")
+        print("1. Jogador vs Computador")
+        print("2. Jogador vs Jogador")
         
         while True:
             escolha = input("\nEscolha o modo de jogo: ")
             
             if escolha == '1':
-                self.modo_computador = False
-                break
-            elif escolha == '2':
                 self.modo_computador = True
                 self.escolher_simbolo()
+                break
+            elif escolha == '2':
+                self.modo_computador = False
                 break
             else:
                 print("Opção inválida! Escolha 1 ou 2.")
