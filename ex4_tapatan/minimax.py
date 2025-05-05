@@ -1,6 +1,7 @@
 '''
 Implementação do algoritmo Minimax para o jogo Tapatan.
-Versão otimizada para criar uma IA praticamente imbatível.
+
+-> Versão otimizada para criar uma IA praticamente imbatível.
 '''
 
 class MinimaxAlgoritmo:

@@ -38,7 +38,7 @@ class Tapatan:
             os.system('clear')
     
     def exibir_tabuleiro(self):
-        """Exibe o tabuleiro atual na tela"""
+        """Exibe o tabuleiro atual na tela em formato melhorado"""
         print("\n  TAPATAN\n")
         
         if self.modo_computador:
@@ -52,13 +52,16 @@ class Tapatan:
         print("")  # Linha em branco
         
         # Exibe índices das colunas
-        print("   0   1   2")
+        print("     0     1     2  ")
+        print("  ┌─────┬─────┬─────┐")
         
-        # Exibe o tabuleiro com linhas numeradas
+        # Exibe o tabuleiro com linhas numeradas e formatação melhorada
         for i, linha in enumerate(self.estado.tabuleiro):
-            print(f"{i}  {linha[0]} | {linha[1]} | {linha[2]}")
+            print(f"{i} │  {linha[0]}  │  {linha[1]}  │  {linha[2]}  │")
             if i < 2:
-                print("  -----------")
+                print("  ├─────┼─────┼─────┤")
+            else:
+                print("  └─────┴─────┴─────┘")
     
     def encontrar_pecas(self, simbolo):
         """
